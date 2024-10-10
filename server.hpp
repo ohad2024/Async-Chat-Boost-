@@ -3,7 +3,6 @@
 #include <boost/asio.hpp>
 #include <vector>
 #include <memory>
-#include <utility> // For std::pair
 #include "ChatMessage.hpp"  // Include the ChatMessage definition
 
 /**
