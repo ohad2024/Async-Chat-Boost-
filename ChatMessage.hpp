@@ -4,26 +4,26 @@
 #include <ctime>
 
 
-enum class MessageType { BROADCAST, MULTICAST, UNICAST };
+enum class MessageType { BROADCAST, MULTICAST };
 
 
 struct ChatMessage {
-    std::string senderUserName; ///< Username of the sender
-    std::string time;           ///< Time when the message was sent
-    std::string message;        ///< Message content
-    MessageType messageType;    ///< Type of the message: BROADCAST, MULTICAST, or UNICAST
-    std::vector<std::string> recipients; ///< List of recipient usernames for MULTICAST and UNICAST
+    //Should I have used _ before the name of the variable here?
+    std::string senderUserName; 
+    std::string time;           
+    std::string message;       
+    MessageType messageType;    
+    std::vector<std::string> recipients; 
 
 
     std::string serialize() const {
         std::string serialized = senderUserName + "|" + time + "|" + std::to_string(static_cast<int>(messageType)) + "|";
 
-        // Serialize recipients, separated by ";"
         for (const auto& recipient : recipients) {
             serialized += recipient + ";";
         }
 
-        serialized += "|" + message; // Add message content
+        serialized += "|" + message;
         return serialized;
     }
 
@@ -38,7 +38,6 @@ struct ChatMessage {
         msg.time = data.substr(pos1 + 1, pos2 - pos1 - 1);
         msg.messageType = static_cast<MessageType>(std::stoi(data.substr(pos2 + 1, pos3 - pos2 - 1)));
 
-        // Deserialize recipients
         size_t start = pos3 + 1;
         size_t pos;
         while ((pos = data.find(';', start)) < pos4) {
@@ -46,7 +45,7 @@ struct ChatMessage {
             start = pos + 1;
         }
 
-        msg.message = data.substr(pos4 + 1); // Remaining part is the message
+        msg.message = data.substr(pos4 + 1); 
         return msg;
     }
 

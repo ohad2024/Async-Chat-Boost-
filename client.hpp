@@ -3,14 +3,15 @@
 #include <boost/asio.hpp>
 #include <string>
 #include <vector>
-#include "ChatMessage.hpp"  // Include the ChatMessage definition
+#include "ChatMessage.hpp" 
 
 
 class ChatClient {
-    boost::asio::io_context ioContext; ///< IO context for handling asynchronous operations
-    boost::asio::ip::tcp::socket clientSocket; ///< Socket for connecting to the server
-    std::string userName; ///< The client's username
-    bool isRunning = true; ///< Indicates if the client is still running
+    boost::asio::io_context _ioContext;
+    boost::asio::ip::tcp::socket _clientSocket;
+    std::string _userName; 
+    bool _isRunning = true;
+
     static const int bufferSize;
     static const std::string serverIp;
     static const int serverPort;

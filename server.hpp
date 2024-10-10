@@ -3,32 +3,25 @@
 #include <boost/asio.hpp>
 #include <vector>
 #include <memory>
-#include "ChatMessage.hpp"  // Include the ChatMessage definition
+#include "ChatMessage.hpp"  
 
-/**
- * @brief Structure to represent a connected client with username and socket.
- */
 struct ClientInfo {
-    std::string username;
-    std::shared_ptr<boost::asio::ip::tcp::socket> socket;
+    std::string _username;
+    std::shared_ptr<boost::asio::ip::tcp::socket> _socket;
 };
 
 
 class ChatServer {
-    boost::asio::io_context ioContext; ///< IO context for handling asynchronous operations
-    boost::asio::ip::tcp::acceptor acceptor; ///< TCP acceptor for handling incoming connections
-    std::vector<ClientInfo> clients; ///< List of connected clients
-
+    boost::asio::io_context _ioContext;
+    boost::asio::ip::tcp::acceptor _acceptor;
+    std::vector<ClientInfo> _clients; 
+    
     static const int serverPort;
     static const int bufferSize;
 
     void acceptClients();
     void asyncAccept();
 
-    /**
-     * @brief Asynchronously reads the username from a newly connected client.
-     * @param clientSocket The socket of the client who just connected.
-     */
     void receiveUsername(std::shared_ptr<boost::asio::ip::tcp::socket> clientSocket);
 
     void asyncRead(std::shared_ptr<boost::asio::ip::tcp::socket> clientSocket);

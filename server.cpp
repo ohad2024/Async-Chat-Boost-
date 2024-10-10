@@ -4,21 +4,22 @@
 const int ChatServer::serverPort = 54000;
 const int ChatServer::bufferSize = 1024;
 
+
 ChatServer::ChatServer()
-    : acceptor(ioContext, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), serverPort)) {}
+    : _acceptor(_ioContext, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), serverPort)) {}
 
 void ChatServer::acceptClients() {
     asyncAccept();
-    ioContext.run();
+    _ioContext.run();
 }
 
 void ChatServer::asyncAccept() {
-    auto clientSocket = std::make_shared<boost::asio::ip::tcp::socket>(ioContext);
-    acceptor.async_accept(*clientSocket,
+    auto clientSocket = std::make_shared<boost::asio::ip::tcp::socket>(_ioContext);
+    _acceptor.async_accept(*clientSocket,
         [this, clientSocket](const boost::system::error_code& error) {
             if (!error) {
-                receiveUsername(clientSocket); // Read username after connection
-                asyncAccept(); // Continue accepting new connections
+                receiveUsername(clientSocket); 
+                asyncAccept();
             }
         });
 }
@@ -30,19 +31,16 @@ void ChatServer::receiveUsername(std::shared_ptr<boost::asio::ip::tcp::socket> c
             if (!error) {
                 std::string username(buffer->data(), length);
 
-                // Add client with username and socket
                 ClientInfo newClient = { username, clientSocket };
-                clients.push_back(newClient);
+                _clients.push_back(newClient);
 
-                // Notify all clients about the new user
                 ChatMessage joinMsg;
                 joinMsg.messageType = MessageType::BROADCAST;
                 joinMsg.senderUserName = "Server";
-                joinMsg.time = ChatMessage::getCurrentTime(); // Set the time for the message
+                joinMsg.time = ChatMessage::getCurrentTime(); 
                 joinMsg.message = username + " has joined the chat.";
                 broadcastMessage(joinMsg);
 
-                // Start reading messages from the client
                 asyncRead(clientSocket);
             }
         });
@@ -57,7 +55,7 @@ void ChatServer::asyncRead(std::shared_ptr<boost::asio::ip::tcp::socket> clientS
                 ChatMessage msg = ChatMessage::deserialize(receivedData);
 
                 handleMessage(msg, clientSocket);
-                asyncRead(clientSocket); // Continue reading from this client
+                asyncRead(clientSocket);
             } else {
                 removeClient(clientSocket);
             }
@@ -73,22 +71,22 @@ void ChatServer::handleMessage(const ChatMessage& message, std::shared_ptr<boost
 }
 
 void ChatServer::broadcastMessage(const ChatMessage& message, std::shared_ptr<boost::asio::ip::tcp::socket> senderSocket) {
-    for (const auto& client : clients) {
-        if (senderSocket == nullptr || client.socket != senderSocket) { // Skip sender for regular broadcast
+    for (const auto& client : _clients) {
+        if (senderSocket == nullptr || client.socket != senderSocket) { 
             asyncWrite(client.socket, message.serialize());
         }
     }
 }
 
 void ChatServer::processRecipients(const ChatMessage& message) {
-    std::vector<std::string> uniqueRecipients; // Using std::string for recipient names
+    std::vector<std::string> uniqueRecipients;
     for (const auto& recipientName : message.recipients) {
         if (std::find(uniqueRecipients.begin(), uniqueRecipients.end(), recipientName) == uniqueRecipients.end()) {
             uniqueRecipients.push_back(recipientName);
         }
     }
 
-    for (const auto& client : clients) {
+    for (const auto& client : _clients) {
         if (std::find(uniqueRecipients.begin(), uniqueRecipients.end(), client.username) != uniqueRecipients.end()) {
             asyncWrite(client.socket, message.serialize());
         }
@@ -107,10 +105,10 @@ void ChatServer::asyncWrite(std::shared_ptr<boost::asio::ip::tcp::socket> client
 }
 
 void ChatServer::removeClient(std::shared_ptr<boost::asio::ip::tcp::socket> clientSocket) {
-    clients.erase(std::remove_if(clients.begin(), clients.end(),
+    _clients.erase(std::remove_if(_clients.begin(), _clients.end(),
         [clientSocket](const ClientInfo& client) {
             return client.socket == clientSocket;
-        }), clients.end());
+        }), _clients.end());
 }
 
 void ChatServer::runServer() {

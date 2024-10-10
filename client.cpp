@@ -1,26 +1,27 @@
 #include "client.hpp"
 #include <iostream>
 
+
 const std::string ChatClient::serverIp = "127.0.0.1";
 const int ChatClient::serverPort = 54000;
 const int ChatClient::bufferSize = 1024;
 
 ChatClient::ChatClient()
-    : clientSocket(ioContext) {}
+    : _clientSocket(_ioContext) {}
 
 void ChatClient::getUserName() {
     std::cout << "Enter your username: ";
-    std::getline(std::cin, userName);
-    while (userName.empty()) {
+    std::getline(std::cin, _userName);
+    while (_userName.empty()) {
         std::cout << "Username cannot be empty. Please enter your username: ";
-        std::getline(std::cin, userName);
+        std::getline(std::cin, _userName);
     }
 }
 
 void ChatClient::asyncConnect() {
-    boost::asio::ip::tcp::resolver resolver(ioContext);
+    boost::asio::ip::tcp::resolver resolver(_ioContext);
     auto endpoints = resolver.resolve(serverIp, std::to_string(serverPort));
-    boost::asio::async_connect(clientSocket, endpoints,
+    boost::asio::async_connect(_clientSocket, endpoints,
         [this](const boost::system::error_code& error, const auto&) {
             if (!error) {
                 asyncSendUsername();
@@ -30,8 +31,8 @@ void ChatClient::asyncConnect() {
 }
 
 void ChatClient::asyncSendUsername() {
-    auto buffer = std::make_shared<std::string>(userName);
-    boost::asio::async_write(clientSocket, boost::asio::buffer(*buffer),
+    auto buffer = std::make_shared<std::string>(_userName);
+    boost::asio::async_write(_clientSocket, boost::asio::buffer(*buffer),
         [buffer](const boost::system::error_code& error, std::size_t) {
             if (error) {
                 std::cerr << "Error sending username: " << error.message() << std::endl;
@@ -41,23 +42,22 @@ void ChatClient::asyncSendUsername() {
 
 void ChatClient::asyncRead() {
     auto buffer = std::make_shared<std::vector<char>>(bufferSize);
-    clientSocket.async_read_some(boost::asio::buffer(*buffer),
+    _clientSocket.async_read_some(boost::asio::buffer(*buffer),
         [this, buffer](const boost::system::error_code& error, std::size_t length) {
             if (!error) {
                 std::string receivedData(buffer->data(), length);
 
-                // Deserialize the received data into a ChatMessage
                 ChatMessage msg = ChatMessage::deserialize(receivedData);
                 std::cout << "[" << msg.time << "] " << msg.senderUserName << ": " << msg.message << std::endl;
 
-                asyncRead(); // Continue reading next message from server
+                asyncRead(); 
             }
         });
 }
 
 void ChatClient::asyncWrite(const std::string& message) {
     auto buffer = std::make_shared<std::string>(message);
-    boost::asio::async_write(clientSocket, boost::asio::buffer(*buffer),
+    boost::asio::async_write(_clientSocket, boost::asio::buffer(*buffer),
         [buffer](const boost::system::error_code& error, std::size_t) {
             if (error) {
                 std::cerr << "Error sending message: " << error.message() << std::endl;
@@ -67,7 +67,7 @@ void ChatClient::asyncWrite(const std::string& message) {
 
 ChatMessage ChatClient::createChatMessage(const std::string& input) {
     ChatMessage msg;
-    msg.senderUserName = userName;
+    msg.senderUserName = _userName;
     msg.time = ChatMessage::getCurrentTime();
 
     if (input[0] == '@') {
@@ -107,12 +107,12 @@ void ChatClient::runClient() {
     getUserName();
     asyncConnect();
 
-    std::thread contextThread([this]() { ioContext.run(); });
+    std::thread contextThread([this]() { _ioContext.run(); });
 
     std::string messageText;
-    while (std::getline(std::cin, messageText) && isRunning) {
+    while (std::getline(std::cin, messageText) && _isRunning) {
         if (messageText == "exit") {
-            isRunning = false;
+            _isRunning = false;
             break;
         }
 
@@ -121,6 +121,6 @@ void ChatClient::runClient() {
         asyncWrite(serializedMessage);
     }
 
-    clientSocket.close();
+    _clientSocket.close();
     contextThread.join();
 }
