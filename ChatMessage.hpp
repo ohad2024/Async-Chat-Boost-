@@ -8,22 +8,21 @@ enum class MessageType { BROADCAST, MULTICAST };
 
 
 struct ChatMessage {
-    //Should I have used _ before the name of the variable here?
-    std::string senderUserName; 
-    std::string time;           
-    std::string message;       
-    MessageType messageType;    
-    std::vector<std::string> recipients; 
+    std::string _senderUserName; 
+    std::string _time;           
+    std::string _message;       
+    MessageType _messageType;    
+    std::vector<std::string> _recipients; 
 
 
     std::string serialize() const {
-        std::string serialized = senderUserName + "|" + time + "|" + std::to_string(static_cast<int>(messageType)) + "|";
+        std::string serialized = _senderUserName + "|" + _time + "|" + std::to_string(static_cast<int>(_messageType)) + "|";
 
-        for (const auto& recipient : recipients) {
+        for (const auto& recipient : _recipients) {
             serialized += recipient + ";";
         }
 
-        serialized += "|" + message;
+        serialized += "|" + _message;
         return serialized;
     }
 
@@ -34,18 +33,18 @@ struct ChatMessage {
         size_t pos3 = data.find('|', pos2 + 1);
         size_t pos4 = data.find('|', pos3 + 1);
 
-        msg.senderUserName = data.substr(0, pos1);
-        msg.time = data.substr(pos1 + 1, pos2 - pos1 - 1);
-        msg.messageType = static_cast<MessageType>(std::stoi(data.substr(pos2 + 1, pos3 - pos2 - 1)));
+        msg._senderUserName = data.substr(0, pos1);
+        msg._time = data.substr(pos1 + 1, pos2 - pos1 - 1);
+        msg._messageType = static_cast<MessageType>(std::stoi(data.substr(pos2 + 1, pos3 - pos2 - 1)));
 
         size_t start = pos3 + 1;
         size_t pos;
         while ((pos = data.find(';', start)) < pos4) {
-            msg.recipients.push_back(data.substr(start, pos - start));
+            msg._recipients.push_back(data.substr(start, pos - start));
             start = pos + 1;
         }
 
-        msg.message = data.substr(pos4 + 1); 
+        msg._message = data.substr(pos4 + 1); 
         return msg;
     }
 

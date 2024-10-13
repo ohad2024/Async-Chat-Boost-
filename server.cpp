@@ -1,9 +1,6 @@
 #include "server.hpp"
 #include <iostream>
 
-const int ChatServer::serverPort = 54000;
-const int ChatServer::bufferSize = 1024;
-
 
 ChatServer::ChatServer()
     : _acceptor(_ioContext, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), serverPort)) {}
@@ -35,10 +32,10 @@ void ChatServer::receiveUsername(std::shared_ptr<boost::asio::ip::tcp::socket> c
                 _clients.push_back(newClient);
 
                 ChatMessage joinMsg;
-                joinMsg.messageType = MessageType::BROADCAST;
-                joinMsg.senderUserName = "Server";
-                joinMsg.time = ChatMessage::getCurrentTime(); 
-                joinMsg.message = username + " has joined the chat.";
+                joinMsg._messageType = MessageType::BROADCAST;
+                joinMsg._senderUserName = "Server";
+                joinMsg._time = ChatMessage::getCurrentTime(); 
+                joinMsg._message = username + " has joined the chat.";
                 broadcastMessage(joinMsg);
 
                 asyncRead(clientSocket);
@@ -63,7 +60,7 @@ void ChatServer::asyncRead(std::shared_ptr<boost::asio::ip::tcp::socket> clientS
 }
 
 void ChatServer::handleMessage(const ChatMessage& message, std::shared_ptr<boost::asio::ip::tcp::socket> senderSocket) {
-    if (message.messageType == MessageType::BROADCAST) {
+    if (message._messageType == MessageType::BROADCAST) {
         broadcastMessage(message, senderSocket);
     } else {
         processRecipients(message);
@@ -72,23 +69,23 @@ void ChatServer::handleMessage(const ChatMessage& message, std::shared_ptr<boost
 
 void ChatServer::broadcastMessage(const ChatMessage& message, std::shared_ptr<boost::asio::ip::tcp::socket> senderSocket) {
     for (const auto& client : _clients) {
-        if (senderSocket == nullptr || client.socket != senderSocket) { 
-            asyncWrite(client.socket, message.serialize());
+        if (senderSocket == nullptr || client._socket != senderSocket) { 
+            asyncWrite(client._socket, message.serialize());
         }
     }
 }
 
 void ChatServer::processRecipients(const ChatMessage& message) {
     std::vector<std::string> uniqueRecipients;
-    for (const auto& recipientName : message.recipients) {
+    for (const auto& recipientName : message._recipients) {
         if (std::find(uniqueRecipients.begin(), uniqueRecipients.end(), recipientName) == uniqueRecipients.end()) {
             uniqueRecipients.push_back(recipientName);
         }
     }
 
     for (const auto& client : _clients) {
-        if (std::find(uniqueRecipients.begin(), uniqueRecipients.end(), client.username) != uniqueRecipients.end()) {
-            asyncWrite(client.socket, message.serialize());
+        if (std::find(uniqueRecipients.begin(), uniqueRecipients.end(), client._username) != uniqueRecipients.end()) {
+            asyncWrite(client._socket, message.serialize());
         }
     }
 }
@@ -107,7 +104,7 @@ void ChatServer::asyncWrite(std::shared_ptr<boost::asio::ip::tcp::socket> client
 void ChatServer::removeClient(std::shared_ptr<boost::asio::ip::tcp::socket> clientSocket) {
     _clients.erase(std::remove_if(_clients.begin(), _clients.end(),
         [clientSocket](const ClientInfo& client) {
-            return client.socket == clientSocket;
+            return client._socket == clientSocket;
         }), _clients.end());
 }
 

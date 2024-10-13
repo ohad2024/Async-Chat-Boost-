@@ -1,11 +1,6 @@
 #include "client.hpp"
 #include <iostream>
 
-
-const std::string ChatClient::serverIp = "127.0.0.1";
-const int ChatClient::serverPort = 54000;
-const int ChatClient::bufferSize = 1024;
-
 ChatClient::ChatClient()
     : _clientSocket(_ioContext) {}
 
@@ -48,9 +43,9 @@ void ChatClient::asyncRead() {
                 std::string receivedData(buffer->data(), length);
 
                 ChatMessage msg = ChatMessage::deserialize(receivedData);
-                std::cout << "[" << msg.time << "] " << msg.senderUserName << ": " << msg.message << std::endl;
+                std::cout << "[" << msg._time << "] " << msg._senderUserName << ": " << msg._message << std::endl;
 
-                asyncRead(); 
+                asyncRead();
             }
         });
 }
@@ -67,16 +62,16 @@ void ChatClient::asyncWrite(const std::string& message) {
 
 ChatMessage ChatClient::createChatMessage(const std::string& input) {
     ChatMessage msg;
-    msg.senderUserName = _userName;
-    msg.time = ChatMessage::getCurrentTime();
+    msg._senderUserName = _userName;
+    msg._time = ChatMessage::getCurrentTime();
 
     if (input[0] == '@') {
-        msg.messageType = MessageType::MULTICAST;
-        msg.recipients = parseRecipientUsernames(input);
-        msg.message = extractMessage(input);
+        msg._messageType = MessageType::MULTICAST;
+        msg._recipients = parseRecipientUsernames(input);
+        msg._message = extractMessage(input);
     } else {
-        msg.messageType = MessageType::BROADCAST;
-        msg.message = input;
+        msg._messageType = MessageType::BROADCAST;
+        msg._message = input;
     }
 
     return msg;

@@ -16,8 +16,8 @@ class ChatServer {
     boost::asio::ip::tcp::acceptor _acceptor;
     std::vector<ClientInfo> _clients; 
     
-    static const int serverPort;
-    static const int bufferSize;
+    static constexpr int serverPort = 54000; 
+    static constexpr int bufferSize = 1024;
 
     void acceptClients();
     void asyncAccept();
